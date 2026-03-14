@@ -1,6 +1,6 @@
 # bike_parts
 
-Adventures in parameterized 3D printing with [SolidPython2](https://github.com/jeff-dh/SolidPython).
+Adventures in parameterized 3D printing with [SolidPython2](https://github.com/jeff-dh/SolidPython) (the actively maintained V2 fork).
 
 Each part is a Python dataclass — tweak a number, re-run, get a new STL. No OpenSCAD editor required.
 
@@ -25,9 +25,17 @@ uv run python render.py
 # Render a single part
 uv run python render.py --part ExampleBracket
 
+# Override parameters on the command line
+uv run python render.py --part GeneralPipeClamp --inner_diameter=25 --tab_depth=12
+
+# See all available parameters for a part
+uv run python render.py --part GeneralPipeClamp --help
+
 # Custom output directory
 uv run python render.py --output /tmp/prints
 ```
+
+When `--part` is given, every dataclass field on that part becomes a CLI flag. Omitted flags use the class defaults.
 
 Output files land in `output/` (gitignored):
 
@@ -114,9 +122,10 @@ uv run mypy src/                     # type check
 src/bike_parts/
   base.py          — Part base class (build + render)
   parts/
-    __init__.py    — ALL_PARTS registry
-    example.py     — ExampleBracket (starter part)
-render.py          — CLI render script
+    __init__.py            — ALL_PARTS registry
+    example.py             — ExampleBracket (starter part)
+    general_pipe_clamp.py  — GeneralPipeClamp + Top/Bottom split variants
+render.py          — CLI render script (auto-exposes dataclass fields as flags)
 tests/             — pytest suite
 output/            — generated .scad and .stl (gitignored)
 ```
