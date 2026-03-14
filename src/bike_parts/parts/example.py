@@ -3,7 +3,8 @@
 import logging
 from dataclasses import dataclass
 
-from pythonopenscad import Cube, Cylinder, PoscBase
+from solid2 import cube, cylinder
+from solid2.core.object_base import OpenSCADObject
 
 from bike_parts.base import Part
 
@@ -26,13 +27,13 @@ class ExampleBracket(Part):
     depth: float = 5.0
     hole_diameter: float = 4.0
 
-    def build(self) -> PoscBase:
+    def build(self) -> OpenSCADObject:
         """Build the bracket model.
 
         Returns:
-            The pythonopenscad model representing the bracket with a mounting hole.
+            The SolidPython2 model representing the bracket with a mounting hole.
         """
-        body = Cube([self.width, self.depth, self.height])
-        hole = Cylinder(h=self.depth + 1, r=self.hole_diameter / 2, _fn=32)
+        body = cube([self.width, self.depth, self.height])
+        hole = cylinder(h=self.depth + 1, r=self.hole_diameter / 2, _fn=32)
         hole = hole.translate([self.width / 2, -0.5, self.height / 2])
         return body - hole

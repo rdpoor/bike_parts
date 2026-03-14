@@ -3,8 +3,7 @@ name = "bike-parts"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "pythonopenscad",
-    "manifold3d",
+    "solidpython2",
 ]
 
 [build-system]

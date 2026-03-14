@@ -1,11 +1,12 @@
 """Base class and render utilities for bike parts."""
 
 import logging
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from pythonopenscad import PoscBase
-from pythonopenscad.m3dapi import M3dRenderer
+from solid2.core.object_base import OpenSCADObject
 
 log = logging.getLogger(__name__)
 
@@ -14,11 +15,11 @@ log = logging.getLogger(__name__)
 class Part:
     """Base class for all bike parts. Subclass and implement build()."""
 
-    def build(self) -> PoscBase:
+    def build(self) -> OpenSCADObject:
         """Build and return the OpenSCAD model for this part.
 
         Returns:
-            The pythonopenscad model object.
+            The SolidPython2 model object.
 
         Raises:
             NotImplementedError: Subclasses must implement this method.
@@ -26,7 +27,7 @@ class Part:
         raise NotImplementedError
 
     def render(self, output_dir: Path) -> None:
-        """Render this part to .scad and .stl in output_dir.
+        """Render this part to .scad and optionally .stl in output_dir.
 
         Args:
             output_dir: Directory where output files will be written.
@@ -36,10 +37,15 @@ class Part:
         model = self.build()
 
         scad_path = output_dir / f"{name}.scad"
-        model.write(str(scad_path))
+        model.save_as_scad(str(scad_path))
         log.info("Wrote %s", scad_path)
 
         stl_path = output_dir / f"{name}.stl"
-        result = model.renderObj(M3dRenderer())
-        result.write_solid_stl(str(stl_path))
-        log.info("Wrote %s", stl_path)
+        if shutil.which("openscad") is not None:
+            subprocess.run(
+                ["openscad", "-o", str(stl_path), str(scad_path)],
+                check=True,
+            )
+            log.info("Wrote %s", stl_path)
+        else:
+            log.warning("openscad not found in PATH; skipping STL export for %s", name)

@@ -11,7 +11,6 @@ from bike_parts.parts import ALL_PARTS
 def setup_logging() -> None:
     """Configure root logger and silence noisy third-party loggers."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    logging.getLogger("manifold3d").setLevel(logging.WARNING)
 
 
 def main() -> None:

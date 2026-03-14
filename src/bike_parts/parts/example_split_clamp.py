@@ -3,7 +3,8 @@
 import logging
 from dataclasses import dataclass
 
-from pythonopenscad import Cube, Cylinder, Intersection, PoscBase
+from solid2 import cube, cylinder
+from solid2.core.object_base import OpenSCADObject
 
 from bike_parts.base import Part
 
@@ -17,7 +18,7 @@ def _build_clamp_body(
     bolt_diameter: float,
     tab_inset: float,
     clearance: float,
-) -> PoscBase:
+) -> OpenSCADObject:
     """Build the pipe clamp body shared by all clamp variants.
 
     Args:
@@ -29,18 +30,18 @@ def _build_clamp_body(
         clearance: Extra diametric clearance around the pipe in mm.
 
     Returns:
-        The clamp body as a pythonopenscad model.
+        The clamp body as a SolidPython2 model.
     """
     effective_pipe_radius = (pipe_diameter + clearance) / 2
     outer_radius = effective_pipe_radius + thickness
 
-    outer = Cylinder(r=outer_radius, h=width)
-    inner = Cylinder(r=effective_pipe_radius, h=width)
+    outer = cylinder(r=outer_radius, h=width)
+    inner = cylinder(r=effective_pipe_radius, h=width)
     clamp_body = outer - inner
 
     tab_length = outer_radius * 2
     tab_width = thickness * 2
-    tab = Cube([tab_length, tab_width, width])
+    tab = cube([tab_length, tab_width, width])
 
     tab_x = -outer_radius
     tab_y = -tab_width / 2 + tab_inset
@@ -49,7 +50,7 @@ def _build_clamp_body(
     clamp = clamp_body + tab
 
     bolt_radius = bolt_diameter / 2
-    bolt_hole = Cylinder(r=bolt_radius, h=width)
+    bolt_hole = cylinder(r=bolt_radius, h=width)
 
     bolt_y = tab_y + tab_width / 2
     bolt_hole = bolt_hole.translate([0, bolt_y, 0])
@@ -57,7 +58,9 @@ def _build_clamp_body(
     return clamp - bolt_hole
 
 
-def _make_cutter(pipe_diameter: float, thickness: float, width: float) -> PoscBase:
+def _make_cutter(
+    pipe_diameter: float, thickness: float, width: float
+) -> OpenSCADObject:
     """Build the box used to split the clamp into top and bottom halves.
 
     Args:
@@ -66,9 +69,9 @@ def _make_cutter(pipe_diameter: float, thickness: float, width: float) -> PoscBa
         width: Width (length along pipe axis) in mm.
 
     Returns:
-        The cutter box as a pythonopenscad model.
+        The cutter box as a SolidPython2 model.
     """
-    cutter = Cube([pipe_diameter * 3, thickness * 3, width * 2])
+    cutter = cube([pipe_diameter * 3, thickness * 3, width * 2])
     return cutter.translate([-pipe_diameter * 1.5, -thickness * 1.5, -width / 2])
 
 
@@ -92,11 +95,11 @@ class PipeClamp(Part):
     tab_inset: float = 0.0
     clearance: float = 0.2
 
-    def build(self) -> PoscBase:
+    def build(self) -> OpenSCADObject:
         """Build the full pipe clamp model.
 
         Returns:
-            The full pipe clamp as a pythonopenscad model.
+            The full pipe clamp as a SolidPython2 model.
         """
         return _build_clamp_body(
             self.pipe_diameter,
@@ -128,7 +131,7 @@ class SplitPipeClampTop(Part):
     tab_inset: float = 0.0
     clearance: float = 0.2
 
-    def build(self) -> PoscBase:
+    def build(self) -> OpenSCADObject:
         """Build the top half of the split clamp.
 
         Returns:
@@ -166,7 +169,7 @@ class SplitPipeClampBottom(Part):
     tab_inset: float = 0.0
     clearance: float = 0.2
 
-    def build(self) -> PoscBase:
+    def build(self) -> OpenSCADObject:
         """Build the bottom half of the split clamp.
 
         Returns:
@@ -181,6 +184,4 @@ class SplitPipeClampBottom(Part):
             self.clearance,
         )
         cutter = _make_cutter(self.pipe_diameter, self.thickness, self.width)
-        result = Intersection()
-        result.extend([clamp, cutter])
-        return result
+        return clamp * cutter
