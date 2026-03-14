@@ -1,6 +1,6 @@
 # bike_parts
 
-Adventures in parameterized 3D printing with [pythonopenscad](https://github.com/owebeeone/pythonopenscad).
+Adventures in parameterized 3D printing with [SolidPython2](https://github.com/jeff-dh/SolidPython).
 
 Each part is a Python dataclass — tweak a number, re-run, get a new STL. No OpenSCAD editor required.
 
@@ -13,6 +13,8 @@ git clone <repo>
 cd bike_parts
 uv sync
 ```
+
+STL export requires the [OpenSCAD](https://openscad.org/downloads.html) CLI to be in `PATH`. Without it, `render.py` writes `.scad` files only and logs a warning.
 
 ## Render parts
 
@@ -32,7 +34,7 @@ Output files land in `output/` (gitignored):
 ```
 output/
   ExampleBracket.scad   ← OpenSCAD source, inspect or tweak in the OpenSCAD GUI
-  ExampleBracket.stl    ← ready to slice
+  ExampleBracket.stl    ← ready to slice (requires openscad in PATH)
 ```
 
 ## Adding a new part
@@ -41,15 +43,16 @@ output/
 
 ```python
 from dataclasses import dataclass
-from pythonopenscad import Cube, PoscBase
+from solid2 import cube
+from solid2.core.object_base import OpenSCADObject
 from bike_parts.base import Part
 
 @dataclass
 class MyPart(Part):
     width: float = 30.0
 
-    def build(self) -> PoscBase:
-        return Cube([self.width, self.width, self.width])
+    def build(self) -> OpenSCADObject:
+        return cube([self.width, self.width, self.width])
 ```
 
 2. Register it in `src/bike_parts/parts/__init__.py`:
@@ -68,7 +71,7 @@ uv run python render.py --part MyPart
 
 ## Viewing parts
 
-Install [OpenSCAD](https://openscad.org/downloads.html) to inspect or tweak the `.scad` source interactively.
+Install [OpenSCAD](https://openscad.org/downloads.html) to inspect or tweak the `.scad` source interactively, and to enable STL export.
 
 **macOS**
 ```bash
@@ -89,13 +92,13 @@ openscad output/ExampleBracket.scad
 
 The `.stl` files can be opened directly in any slicer (PrusaSlicer, Bambu Studio, Cura, etc.).
 
-## pythonopenscad API reference
+## SolidPython2 API reference
 
-- **GitHub / README:** https://github.com/owebeeone/pythonopenscad
-- **Primitives:** `Cube`, `Sphere`, `Cylinder`, `Polyhedron`, …
+- **GitHub / docs:** https://github.com/jeff-dh/SolidPython
+- **Primitives:** `cube`, `sphere`, `cylinder`, `polyhedron`, …
 - **Transforms:** `.translate()`, `.rotate()`, `.scale()`, `.mirror()`, …
-- **Boolean ops:** `a + b` (union), `a - b` (difference), `Intersection().extend([a, b])`
-- **Output:** `model.write("file.scad")` · `model.renderObj(M3dRenderer()).write_solid_stl("file.stl")`
+- **Boolean ops:** `a + b` (union), `a - b` (difference), `a * b` (intersection)
+- **Output:** `model.save_as_scad("file.scad")` · STL via `openscad -o file.stl file.scad`
 
 ## Development
 
