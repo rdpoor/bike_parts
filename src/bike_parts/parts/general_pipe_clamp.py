@@ -24,6 +24,7 @@ class GeneralPipeClamp(Part):
         tab_width: length of the mounting tabs (extending beyond outer_diameter)
         tab_depth: depth of the mounting tabs
         bolt_hole_diameter: diameter of the bolt hole through the tabs
+        split_gap: distance bewween left and right halves
     """
 
     inner_diameter: float = 20.0
@@ -32,6 +33,7 @@ class GeneralPipeClamp(Part):
     tab_width: float = 10.0
     tab_depth: float = 15.0
     bolt_hole_diameter: float = 4.0
+    split_gap: float = 1.0
 
     def build(self) -> OpenSCADObject:
         """Build the bracket model.
@@ -57,13 +59,17 @@ class GeneralPipeClamp(Part):
         bolt_offset = (x1 + x0) / 2
         bolt_hole_l = bolt_hole.translate([-bolt_offset, 0, 0])
         bolt_hole_r = bolt_hole.translate([bolt_offset, 0, 0])
-        return (body + tabs) - (hole + bolt_hole_l + bolt_hole_r)
+        split_plane = cube(
+            [self.outer_diameter + self.tab_width * 2, self.split_gap, self.height],
+            center=True,
+        )
+        return ((body + tabs) - (hole + bolt_hole_l + bolt_hole_r + split_plane))
 
 
 @dataclass
 class GeneralPipeClampTop(GeneralPipeClamp):
     """Top half (y >= 0) of a split GeneralPipeClamp.
-
+    Superceded by GeneralPipeClamp (which handles the split)
     Inherits all parameters from GeneralPipeClamp.
     """
 
@@ -80,7 +86,7 @@ class GeneralPipeClampTop(GeneralPipeClamp):
 @dataclass
 class GeneralPipeClampBottom(GeneralPipeClamp):
     """Bottom half (y < 0) of a split GeneralPipeClamp.
-
+    Superceded by GeneralPipeClamp (which handles the split)
     Inherits all parameters from GeneralPipeClamp.
     """
 
