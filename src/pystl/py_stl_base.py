@@ -49,3 +49,4 @@ class PyStlPart:
             log.info("Wrote %s", stl_path)
         else:
             log.warning("openscad not found in PATH; skipping STL export for %s", name)
+

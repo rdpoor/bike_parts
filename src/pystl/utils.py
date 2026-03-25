@@ -1,24 +1,40 @@
 """Geometry utilities for pystl models."""
 
-from solid2 import cube
+import logging
+import shutil
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
+
 from solid2.core.object_base import OpenSCADObject
 
-# Half-space cutter extent in mm — large enough to cover any printable part.
-_HALF_SPACE: float = 1000.0
+log = logging.getLogger(__name__)
 
+def setup_logging() -> None:
+    """Configure root logger at INFO level with a simple format."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
-def split_at_y(obj: OpenSCADObject) -> tuple[OpenSCADObject, OpenSCADObject]:
-    """Split an OpenSCADObject into two halves along the Y=0 plane.
-
-    Args:
-        obj: The model to split.
-
-    Returns:
-        A tuple ``(negative, positive)`` where:
-        - ``negative`` contains all geometry with y < 0
-        - ``positive`` contains all geometry with y >= 0
+def write_model(model: OpenSCADObject, model_name: Path):
     """
-    s = _HALF_SPACE
-    positive_half = cube([2 * s, s, 2 * s]).translate([-s, 0, -s])
-    negative_half = cube([2 * s, s, 2 * s]).translate([-s, -s, -s])
-    return obj * negative_half, obj * positive_half
+    Write a model to <model_name>.scad, and if `openscad` is available,
+    write the model to <model_name>.stl
+    """
+    path = Path(model_name)
+    output_dir = path.parent
+    if output_dir != path:
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    scad_path = path.with_suffix('.scad')
+    model.save_as_scad(str(scad_path))
+    log.info(f"Wrote {scad_path}")
+
+    if shutil.which("openscad") is not None:
+        stl_path = path.with_suffix('.stl')
+        subprocess.run(
+            ["openscad", "-o", str(stl_path), str(scad_path)],
+            check=True,
+        )
+        log.info(f"Wrote {stl_path}")
+    else:
+        log.warning("openscad not found in PATH; skipping STL export for %s", model_name)
+

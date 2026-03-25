@@ -12,7 +12,6 @@ from solid2 import cube, cylinder
 from solid2.core.object_base import OpenSCADObject
 
 from pystl import cli
-from pystl.library.filleted_rect import FilletedFrame
 from pystl.py_stl_base import PyStlPart
 
 
@@ -27,6 +26,7 @@ class LampSidePanel(PyStlPart):
     notch_width: float = 18.0
     notch_height: float = 4.0
     bolt_diameter: float = 4.5
+    bolt_spacing: float = 45.7+4.5
 
     def build(self) -> OpenSCADObject:
 
@@ -36,12 +36,8 @@ class LampSidePanel(PyStlPart):
             _fn=128, 
             center=True
         )
-        unnotched_width = (self.part_width - self.notch_width)/2
-        unnotched_center = unnotched_width/2.0
-        bolt_x_offset = self.notch_width / 2 + unnotched_center
-
-        left_bolt = bolt_hole.translate([bolt_x_offset, 0, 0])
-        right_bolt = bolt_hole.translate([-bolt_x_offset, 0, 0])
+        left_bolt = bolt_hole.translate([self.bolt_spacing/2, 0, 0])
+        right_bolt = bolt_hole.translate([-self.bolt_spacing/2, 0, 0])
         plate = cube(
             [self.part_width, self.part_height, self.part_thickness],
             center=True,
