@@ -58,14 +58,31 @@ def slotted_arc(x_org, y_org, start_deg, end_deg, radius, slot_width, fn=128):
 
 def build_mounting_ear(ear_thickness: float = 3.0) -> OpenSCADObject:
 
-    lamp_bolt_diameter = 4.3
-    lamp_bolt_spacing = 50
-    lamp_bolt_hole = circle(
-        r=lamp_bolt_diameter / 2,
+    retaining_bolt_diameter = 4.3
+    retaining_bolt_spacing = 50
+    retaining_bolt_hole = circle(
+        r=retaining_bolt_diameter / 2,
         _fn=128,
     )
-    left_lamp_bolt = lamp_bolt_hole.translate([lamp_bolt_spacing/2, 6, 0])
-    right_lamp_bolt = lamp_bolt_hole.translate([-lamp_bolt_spacing/2, 6, 0])
+    upper_retaining_bolt = retaining_bolt_hole.translate([retaining_bolt_spacing/2, 6, 0])
+    lower_retaining_bolt = retaining_bolt_hole.translate([-retaining_bolt_spacing/2, 6, 0])
+
+    mounting_bolt_diameter = 5.3
+    mounting_bolt_hole = circle(
+        r=mounting_bolt_diameter / 2,
+        _fn=128,
+    )
+    upper_mounting_bolt = mounting_bolt_hole.translate([-15, 30, 0])
+    lower_mounting_slot = slotted_arc(0, 0, -10, +10, 30, mounting_bolt_diameter, fn=128)
+    lower_mounting_slot = lower_mounting_slot.translate([-15, 30, 0])
+
+    turn_signal_bolt_diameter = 10.1
+    turn_signal_bolt_hole = circle(
+        r=turn_signal_bolt_diameter/2,
+        _fn=128,
+    )
+    turn_signal_bolt = turn_signal_bolt_hole.translate([-15 + 18, 30, 0])
+
     plate = polygon(
         [
             [-66/2, 0],
@@ -77,15 +94,13 @@ def build_mounting_ear(ear_thickness: float = 3.0) -> OpenSCADObject:
             [-66/2, 0]
         ],
     )
-    mounting_bolt_diameter = 5.3
-    mounting_bolt_hole = circle(
-        r=mounting_bolt_diameter / 2,
-        _fn=128,
+    ear = (plate) - (
+        upper_retaining_bolt +
+        lower_retaining_bolt +
+        upper_mounting_bolt +
+        lower_mounting_slot +
+        turn_signal_bolt
     )
-    left_mounting_bolt = mounting_bolt_hole.translate([-15, 30, 0])
-    right_mounting_slot = slotted_arc(0, 0, -10, +10, 30, mounting_bolt_diameter, fn=128)
-    right_mounting_slot = right_mounting_slot.translate([-15, 30, 0])
-    ear = (plate) - (left_lamp_bolt + right_lamp_bolt + left_mounting_bolt + right_mounting_slot)
     return ear.linear_extrude(ear_thickness)
 
 @dataclass
@@ -98,10 +113,10 @@ class LampFrame01(PyStlPart):
 
     Attributes:
         lamp_width: width of the lamp housing
-        lamp_height: height of the housing
+        lamp_length: height of the housing
         lamp_radius: fillet radius of the lamp housing corner
         cutout_width: width of the faceplate cutout rectangle
-        cutout_height: height of the faceplate cutout rectangle
+        cutout_length: height of the faceplate cutout rectangle
         cutout_radius: fillet radius of the faceplate cutout rectangle
         faceplate_thickness: thickness of the faceplate
         sidewall_thickness: thickness of the sidewall
@@ -109,61 +124,40 @@ class LampFrame01(PyStlPart):
     """
 
     lamp_width: float = 169.16 + 1
-    lamp_height: float = 107.5 + 1
-    lamp_radius: float = 16.5
+    lamp_length: float = 107.5 + 1
+    lamp_radius: float = 15
     cutout_width: float = 160.5
-    cutout_height: float = 100.5
+    cutout_length: float = 100.5
+    cutout_radius: float = 10.0
+    faceplate_thickness: float = 3.0
+    sidewall_thickness: float = 3.0
+    sidewall_depth: float = 20.0
 
     def build(self) -> OpenSCADObject:
         faceplate_outer_width = self.lamp_width + 2 * self.sidewall_thickness
-        faceplate_outer_height = self.lamp_height + 2 * self.sidewall_thickness
+        faceplate_outer_length = self.lamp_length + 2 * self.sidewall_thickness
         faceplate_outer_radius = self.lamp_radius + self.sidewall_thickness
 
         faceplate = FilletedFrame(
             outer_width=faceplate_outer_width,
-            outer_height=faceplate_outer_height,
+            outer_height=faceplate_outer_length,
             outer_radius=faceplate_outer_radius,
             inner_width=self.cutout_width,
-            inner_height=self.cutout_height,
+            inner_height=self.cutout_length,
             inner_radius=self.cutout_radius,
             depth=self.faceplate_thickness,
         ).build()
 
         sidewalls = FilletedFrame(
             outer_width=faceplate_outer_width,
-            outer_height=faceplate_outer_height,
+            outer_height=faceplate_outer_length,
             outer_radius=faceplate_outer_radius,
             inner_width=self.lamp_width,
-            inner_height=self.lamp_height,
+            inner_height=self.lamp_length,
             inner_radius=self.lamp_radius,
             depth=self.sidewall_depth,
         ).build()
 
-        # bolt_diameter = 4.5
-        # bolt_spacing = 45.7+4.5
-
-        # bolt_hole = circle(
-        #     r=bolt_diameter / 2,
-        #     _fn=128,
-        # )
-        # left_bolt = bolt_hole.translate([bolt_spacing/2, 6.5, 0])
-        # right_bolt = bolt_hole.translate([-bolt_spacing/2, 6.5, 0])
-        # mounting_ear = polygon(
-        #     [
-        #         [-66/2, 0],
-        #         [-66/2, 12],
-        #         [-(66/2)+24, 36],
-        #         [(66/2)-24, 36],
-        #         [66/2, 12],
-        #         [66/2, 0],
-        #         [-66/2, 0]
-        #     ],
-        # )
-        # # add bolt holes, extrude 2D -> 3D, rotate into correct orientation
-        # mounting_ear = mounting_ear - (left_bolt + right_bolt)
-        # mounting_ear = mounting_ear.linear_extrude(
-        #     height=self.sidewall_thickness,
-        #     center=True)
         mounting_ear = build_mounting_ear(self.sidewall_thickness)
         mounting_ear = mounting_ear.rotate(90, 00, 90)
         # translate to form left and right mounting ears
